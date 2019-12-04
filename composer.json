@@ -1,5 +1,5 @@
 {
-  "name": "clevephp/drives/queues/kafka", 
+  "name": "clevephp/kafka", 
   "description": "ClevePHP mservice Drives",  
   "keywords": [  
     "kafka",
