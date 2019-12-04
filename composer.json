@@ -1,5 +1,5 @@
 {
-  "name": "ClevePHP-Drives-Queues-kafka", 
+  "name": "ClevePHP_Drives_Queues_kafka", 
   "description": "ClevePHP mservice Drives",  
   "keywords": [  
     "kafka",
