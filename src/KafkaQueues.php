@@ -9,7 +9,7 @@
  */
 namespace ClevePHP\Drives\Queues\kafka;
 
-class KafkaQueues
+class Kafkaqueues
 {
 
     static $driveObject;
@@ -28,7 +28,7 @@ class KafkaQueues
             "group_id" => isset(self::$config['group_id']) ? self::$config['group_id'] : "T-001"
         ];
         if (self::$config) {
-            $conf = array_mrege($conf, self::$config);
+            $conf = array_merge($conf, self::$config);
         }
         if (is_array($data)) {
             $data = json_endoce($data);
@@ -43,7 +43,7 @@ class KafkaQueues
             "group_id" => isset(self::$config['group_id']) ? self::$config['group_id'] : "T-001"
         ];
         if (self::$config) {
-            $conf = array_mrege($conf, self::$config);
+            $conf = array_merge($conf, self::$config);
         }
         $config = (\ClevePHP\Drives\Queues\kafka\Config::getInstance())->loadConfig($conf);
         (\ClevePHP\Drives\Queues\kafka\Consumer::getInstance())->config($config)->consumer(function ($message) use ($callback) {
