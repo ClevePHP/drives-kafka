@@ -4,38 +4,24 @@ namespace ClevePHP\Drives\Queues\kafka;
 class Config
 {
 
-    /**
-     * * Topic的元信息刷新的间隔 **
-     */
+    //Topic的元信息刷新的间隔 **
     public $metadataRefreshIntervalMs = 10000;
 
-    /**
-     * * 设置broker的地址 **
-     */
+    //设置broker的地址 **
     public $metadataBrokerList = "127.0.0.1:9092";
 
-    /**
-     * * 设置broker的代理版本 **
-     */
+    // 设置broker的代理版本 **
     public $brokerVersion = "1.0.0";
-
-    /**
-     * * 只需要leader确认消息 **
-     */
+    //只需要leader确认消息 **
     public $requiredAck = "1";
-
-    /**
-     * * 选择异步 **
-     */
+    //选择异步 **
     public $isAsyn = false;
 
-    /**
-     * * 每500毫秒发送消息 **
-     */
+    //每500毫秒发送消息 **
     public $produceInterval = 50;
-
+    //toppic
     public $toppic = "";
-    
+    //groupid
     public $gropuId="";
     //保存offset的方式，可以选择broker或者file
     public $offsetStoreMethod="file";

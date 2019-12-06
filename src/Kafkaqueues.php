@@ -47,7 +47,7 @@ class Kafkaqueues
         }
         $config = (\ClevePHP\Drives\Queues\kafka\Config::getInstance())->loadConfig($conf);
         (\ClevePHP\Drives\Queues\kafka\Consumer::getInstance())->config($config)->consumer(function ($message) use ($callback) {
-            ($callback instanceof \Closure) && call_user_func($callback, $message->payload);
+            ($callback instanceof \Closure) && call_user_func($callback, $message);
         });
     }
 }
