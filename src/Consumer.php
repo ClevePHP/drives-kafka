@@ -34,11 +34,6 @@ class Consumer
         return $this;
     }
 
-    /**
-             * 获取topic有多少分区
-     *
-     * @return []
-     */
     public function getPartitions()
     {
         $consumer = new \RdKafka\Consumer();
@@ -53,6 +48,41 @@ class Consumer
         }
         return $partitions;
     }
+
+    public function consumerPop(callable $callback, $partionId = 0)
+    {
+        $conf = new \RdKafka\Conf();
+        $conf->set('group.id', $this->getConfig()->gropuId);
+        $rk = new \RdKafka\Consumer($conf);
+        $topicConf = new \RdKafka\TopicConf();
+        $rk->addBrokers($this->getConfig()->metadataBrokerList);
+        $topicConf->set('request.required.acks', $this->getConfig()->requiredAck);
+        $topicConf->set('offset.store.path', sys_get_temp_dir());
+        $topicConf->set('auto.commit.enable', $this->getConfig()->autoCommitEnable);
+        $topicConf->set('auto.commit.interval.ms', $this->getConfig()->autoCommitIntervalMs);
+        $topicConf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
+        $topicConf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+        $topic = $rk->newTopic($this->getConfig()->toppic, $topicConf);
+        // Start consuming partition 0
+        $topic->consumeStart(0, RD_KAFKA_OFFSET_STORED);
+        $message = $topic->consume($partionId, 120 * 10000);
+        if ($message) {
+            switch ($message->err) {
+                case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    ($callback instanceof \Closure) && call_user_func($callback, $message);
+                    break;
+                case RD_KAFKA_RESP_ERR__PARTITION_EOF:
+                    echo "receive..." . PHP_EOL;
+                    break;
+                case RD_KAFKA_RESP_ERR__TIMED_OUT:
+                    echo "timeout..." . PHP_EOL;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     public function consumer(callable $callback, $partionId = 0)
     {
         $conf = new \RdKafka\Conf();
@@ -60,24 +90,29 @@ class Consumer
         $rk = new \RdKafka\Consumer($conf);
         $rk->addBrokers($this->getConfig()->metadataBrokerList);
         $topicConf = new \RdKafka\TopicConf();
-        $topicConf->set('auto.commit.interval.ms', $this->getConfig()->metadataRefreshIntervalMs);
-        $topicConf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
+        $topicConf->set('request.required.acks', $this->getConfig()->requiredAck);
         $topicConf->set('offset.store.path', sys_get_temp_dir());
-        $topicConf->set('auto.offset.reset', 'smallest');
+        $topicConf->set('auto.commit.enable', $this->getConfig()->autoCommitEnable);
+        $topicConf->set('auto.commit.interval.ms', $this->getConfig()->autoCommitIntervalMs);
+        $topicConf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
+        $topicConf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
         $topic = $rk->newTopic($this->getConfig()->toppic, $topicConf);
-        // Start consuming partition 0
         $topic->consumeStart(0, RD_KAFKA_OFFSET_STORED);
         while (true) {
-            $message = $topic->consume($partionId, 120 * 10000);
+            $message = $topic->consume(0, 12 * 1000);
+            if (is_null($message)) {
+                sleep(1);
+                continue;
+            }
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
                     ($callback instanceof \Closure) && call_user_func($callback, $message);
                     break;
                 case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                    echo "receive...".PHP_EOL;
+                    echo "No more messages; will wait for more\n";
                     break;
                 case RD_KAFKA_RESP_ERR__TIMED_OUT:
-                    echo "timeout...".PHP_EOL;
+                    echo "Timed out\n";
                     break;
                 default:
                     throw new \Exception($message->errstr(), $message->err);

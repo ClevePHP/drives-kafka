@@ -7,7 +7,7 @@ class Producers
     protected $producer;
 
     protected $topic;
-
+    protected $topicConf;
     protected $config;
 
     private static $instance;
@@ -26,11 +26,7 @@ class Producers
         return self::$instance;
     }
 
-    /**
-                *   实例化
-     *
-     * @param \ClevePHP\Drives\Queues\kafka\Config $config
-     */
+    
     public function config(\ClevePHP\Drives\Queues\kafka\Config $config)
     {
         $this->config = $config;
@@ -39,20 +35,18 @@ class Producers
         return $this;
     }
 
-    /**
-             * 发消息
-     *
-     * @return \RdKafka\Producer
-     */
+    
     public function produce($message)
     {
         try {
             $this->producer();
             if ($this->producer && $this->topic && $message) {
-                $this->topic->produce(RD_KAFKA_PARTITION_UA, 0, $message);
-                $this->producer->poll(0);
-                while ($this->producer->getOutQLen() > 0) {
-                    $this->producer->poll($this->getConfig()->produceInterval);
+                $topic = $this->producer->newTopic($this->getConfig()->toppic, $this->topicConf);
+                $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message);
+                $len = $this->producer->getOutQLen();
+                while ($len > 0) {
+                    $len = $this->producer->getOutQLen();
+                    $this->producer->poll(50);
                 }
             } else {
                 throw new \Exception("toppic is null");
@@ -62,19 +56,21 @@ class Producers
         }
     }
 
-    /**
-                * 生产者
-     *
-     * @return \RdKafka\Producer
-     */
+    
     protected function producer()
     {
         if (! $this->producer) {
-            $producer = new \RdKafka\Producer();
-            $producer->setLogLevel(LOG_DEBUG);
-            $producer->addBrokers($this->getConfig()->metadataBrokerList);
-            $this->topic = $producer->newTopic($this->getConfig()->toppic);
-            $this->producer = $producer;
+            $rcf = new \RdKafka\Conf();
+            $rcf->set('group.id', $this->getConfig()->gropuId);
+            $cf = new \RdKafka\TopicConf();
+            $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
+            $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+            $cf->set('request.required.acks', $this->getConfig()->requiredAck);
+            $this->topicConf=$cf;
+            $rk = new \RdKafka\Producer($rcf);
+            $rk->setLogLevel(LOG_DEBUG);
+            $rk->addBrokers($this->getConfig()->metadataBrokerList);
+            $this->producer=$rk;
         }
         return $this->producer;
     }

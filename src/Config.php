@@ -4,29 +4,18 @@ namespace ClevePHP\Drives\Queues\kafka;
 class Config
 {
 
-    //Topic的元信息刷新的间隔 **
     public $metadataRefreshIntervalMs = 10000;
-
-    //设置broker的地址 **
     public $metadataBrokerList = "127.0.0.1:9092";
-
-    // 设置broker的代理版本 **
     public $brokerVersion = "1.0.0";
-    //只需要leader确认消息 **
     public $requiredAck = "1";
-    //选择异步 **
     public $isAsyn = false;
-
-    //每500毫秒发送消息 **
     public $produceInterval = 50;
-    //toppic
     public $toppic = "";
-    //groupid
     public $gropuId="";
-    //保存offset的方式，可以选择broker或者file
     public $offsetStoreMethod="file";
-    //如果没有检测到有保存的offset，就从最小开始
     public $autoOffsetReset="smallest";
+    public $autoCommitEnable=0;
+    public $autoCommitIntervalMs=100;
 
     private static $instance;
 
@@ -44,7 +33,6 @@ class Config
         return self::$instance;
     }
 
-    // 由配置文件加载
     public function loadConfig($config)
     {
         if ($config) {
@@ -77,6 +65,12 @@ class Config
             }
             if (isset($config['auto_offset_reset'])) {
                 $this->autoOffsetReset=$config['auto_offset_reset'];
+            }
+            if(isset($config["auto_commit_enable"])){
+                $this->autoCommitEnable=$config["auto_commit_enable"];
+            }
+            if (isset($config["auto_commit_interval_ms"])) {
+                $this->autoCommitIntervalMs=$config["auto_commit_interval_ms"];
             }
         }
         return $this;
