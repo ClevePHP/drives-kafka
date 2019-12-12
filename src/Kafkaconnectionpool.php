@@ -50,7 +50,7 @@ class Kafkaconnectionpool
        }
     }
 
-    private function setTag($tag)
+    public function setTag($tag)
     {
         $this->tag = $tag;
         return $this;
