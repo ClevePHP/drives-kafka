@@ -84,9 +84,9 @@ class Kafkaconnectionpool
             if ($avilConnectionNum == 0) {
                 return false;
             }
-            $redis = null;
+            $kafka = null;
             $kafka = array_pop($this->connectObjects[$this->connectName][$this->tag]);
-            array_push($this->connectObjects[$this->connectName][$this->tag], $redis);
+            array_push($this->connectObjects[$this->connectName][$this->tag], $kafka);
             return $kafka;
         } catch (\Throwable $e) {
             print_r($e->__toString());
