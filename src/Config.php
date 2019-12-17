@@ -16,6 +16,8 @@ class Config
     public $autoOffsetReset="smallest";
     public $autoCommitEnable=0;
     public $autoCommitIntervalMs=100;
+    
+    public $debugLogLevel=0;
 
     private static $instance;
 
@@ -71,6 +73,9 @@ class Config
             }
             if (isset($config["auto_commit_interval_ms"])) {
                 $this->autoCommitIntervalMs=$config["auto_commit_interval_ms"];
+            }
+            if (isset($config['debug_log_level'])) {
+                $this->debugLogLevel=$config['debug_log_level'];
             }
         }
         return $this;

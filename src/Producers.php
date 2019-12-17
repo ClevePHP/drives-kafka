@@ -7,7 +7,9 @@ class Producers
     protected $producer;
 
     protected $topic;
+
     protected $topicConf;
+
     protected $config;
 
     private static $instance;
@@ -26,7 +28,6 @@ class Producers
         return self::$instance;
     }
 
-    
     public function config(\ClevePHP\Drives\Queues\kafka\Config $config)
     {
         $this->config = $config;
@@ -35,7 +36,6 @@ class Producers
         return $this;
     }
 
-    
     public function produce($message)
     {
         try {
@@ -56,7 +56,6 @@ class Producers
         }
     }
 
-    
     protected function producer()
     {
         if (! $this->producer) {
@@ -66,11 +65,13 @@ class Producers
             $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
             $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
             $cf->set('request.required.acks', $this->getConfig()->requiredAck);
-            $this->topicConf=$cf;
+            $this->topicConf = $cf;
             $rk = new \RdKafka\Producer($rcf);
-            $rk->setLogLevel(LOG_DEBUG);
+            if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
+                $rk->setLogLevel($this->getConfig()->debugLogLevel);
+            }
             $rk->addBrokers($this->getConfig()->metadataBrokerList);
-            $this->producer=$rk;
+            $this->producer = $rk;
         }
         return $this->producer;
     }
