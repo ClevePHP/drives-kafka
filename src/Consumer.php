@@ -62,6 +62,7 @@ class Consumer
         $topicConf->set('auto.commit.interval.ms', $this->getConfig()->autoCommitIntervalMs);
         $topicConf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
         $topicConf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+        $topicConf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
         $topic = $rk->newTopic($this->getConfig()->toppic, $topicConf);
         // Start consuming partition 0
         $topic->consumeStart(0, RD_KAFKA_OFFSET_STORED);

@@ -16,7 +16,7 @@ class Config
     public $autoOffsetReset="smallest";
     public $autoCommitEnable=0;
     public $autoCommitIntervalMs=100;
-    
+    public $messageTimeoutMs=3000;
     public $debugLogLevel=0;
 
     private static $instance;
@@ -76,6 +76,9 @@ class Config
             }
             if (isset($config['debug_log_level'])) {
                 $this->debugLogLevel=$config['debug_log_level'];
+            }
+            if (isset($config['message_timeout_ms'])) {
+                $this->messageTimeoutMs=$config['message_timeout_ms'];
             }
         }
         return $this;

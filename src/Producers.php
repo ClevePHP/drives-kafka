@@ -58,22 +58,28 @@ class Producers
 
     protected function producer()
     {
-        if (! $this->producer) {
-            $rcf = new \RdKafka\Conf();
-            $rcf->set('group.id', $this->getConfig()->gropuId);
-            $cf = new \RdKafka\TopicConf();
-            $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
-            $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
-            $cf->set('request.required.acks', $this->getConfig()->requiredAck);
-            $this->topicConf = $cf;
-            $rk = new \RdKafka\Producer($rcf);
-            if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
-                $rk->setLogLevel($this->getConfig()->debugLogLevel);
+        try {
+            if (! $this->producer) {
+                $rcf = new \RdKafka\Conf();
+                $rcf->set('group.id', $this->getConfig()->gropuId);
+                $cf = new \RdKafka\TopicConf();
+                $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
+                $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+                $cf->set('request.required.acks', $this->getConfig()->requiredAck);
+                $cf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
+                $this->topicConf = $cf;
+                $rk = new \RdKafka\Producer($rcf);
+                if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
+                    $rk->setLogLevel($this->getConfig()->debugLogLevel);
+                }
+                $rk->addBrokers($this->getConfig()->metadataBrokerList);
+                $this->producer = $rk;
             }
-            $rk->addBrokers($this->getConfig()->metadataBrokerList);
-            $this->producer = $rk;
+            return $this->producer;
+        } catch (\Throwable $e) {
+            echo "======producer======".PHP_EOL;
+            print_r($e->__toString());
         }
-        return $this->producer;
     }
 
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config
