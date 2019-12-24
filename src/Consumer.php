@@ -65,7 +65,7 @@ class Consumer
         $topicConf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
         $topic = $rk->newTopic($this->getConfig()->toppic, $topicConf);
         // Start consuming partition 0
-        $topic->consumeStart(0, RD_KAFKA_OFFSET_STORED);
+        $topic->consumeStart(0, RD_KAFKA_OFFSET_END);
         $message = $topic->consume($partionId, 120 * 10000);
         if ($message) {
             switch ($message->err) {
@@ -84,7 +84,55 @@ class Consumer
         }
     }
 
-    public function consumer(callable $callback, $partionId = 0)
+    public function consumer(callable $callback)
+    {
+        $conf = new \RdKafka\Conf();
+        $conf->setRebalanceCb(function (\RdKafka\KafkaConsumer $kafka, $err, array $partitions = null) {
+            switch ($err) {
+                case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
+                    // echo "Assign: ";
+                    // var_dump($partitions);
+                    $kafka->assign($partitions);
+                    break;
+                case RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS:
+                    // echo "Revoke: ";
+                    // var_dump($partitions);
+                    $kafka->assign(NULL);
+                    break;
+                default:
+                    throw new \Exception($err);
+            }
+        });
+        $conf->set('group.id', $this->getConfig()->gropuId);
+        $conf->set('metadata.broker.list', $this->getConfig()->metadataBrokerList);
+        $topicConf = new \RdKafka\TopicConf();
+        $topicConf->set('request.required.acks', $this->getConfig()->requiredAck);
+        $topicConf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+        $conf->setDefaultTopicConf($topicConf);
+        $consumer = new \RdKafka\KafkaConsumer($conf);
+        $consumer->subscribe([
+            $this->getConfig()->toppic
+        ]);
+        while (true) {
+            $message = $consumer->consume(120 * 1000);
+            switch ($message->err) {
+                case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    ($callback instanceof \Closure) && call_user_func($callback, $message);
+                    break;
+                case RD_KAFKA_RESP_ERR__PARTITION_EOF:
+                    echo "No more messages; will wait for more\n";
+                    break;
+                case RD_KAFKA_RESP_ERR__TIMED_OUT:
+                    echo "Timed out\n";
+                    break;
+                default:
+                    throw new \Exception($message->errstr(), $message->err);
+                    break;
+            }
+        }
+    }
+
+    public function consumerLow(callable $callback, $partionId = 0)
     {
         $conf = new \RdKafka\Conf();
         $conf->set('group.id', $this->getConfig()->gropuId);
@@ -121,6 +169,7 @@ class Consumer
             }
         }
     }
+
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config
     {
         return $this->config;

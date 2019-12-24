@@ -38,48 +38,42 @@ class Producers
 
     public function produce($message)
     {
-        try {
-            $this->producer();
-            if ($this->producer && $this->topic && $message) {
-                $topic = $this->producer->newTopic($this->getConfig()->toppic, $this->topicConf);
-                $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message);
+        $this->producer();
+        if ($this->producer && $this->topic && $message) {
+            $topic = $this->producer->newTopic($this->getConfig()->toppic, $this->topicConf);
+            $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message);
+            $len = $this->producer->getOutQLen();
+            while ($len > 0) {
                 $len = $this->producer->getOutQLen();
-                while ($len > 0) {
-                    $len = $this->producer->getOutQLen();
-                    $this->producer->poll(50);
+                $result = $this->producer->poll(50);
+                if (! $result) {
+                    throw new \Exception("kafka connection error");
                 }
-            } else {
-                throw new \Exception("toppic is null");
             }
-        } catch (\Exception $e) {
-            echo $e->getMessage();
+        } else {
+            throw new \Exception("toppic is null");
         }
     }
 
     protected function producer()
     {
-        try {
-            if (! $this->producer) {
-                $rcf = new \RdKafka\Conf();
-                $rcf->set('group.id', $this->getConfig()->gropuId);
-                $cf = new \RdKafka\TopicConf();
-                $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
-                $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
-                $cf->set('request.required.acks', $this->getConfig()->requiredAck);
-                $cf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
-                $this->topicConf = $cf;
-                $rk = new \RdKafka\Producer($rcf);
-                if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
-                    $rk->setLogLevel($this->getConfig()->debugLogLevel);
-                }
-                $rk->addBrokers($this->getConfig()->metadataBrokerList);
-                $this->producer = $rk;
+        if (! $this->producer) {
+            $rcf = new \RdKafka\Conf();
+            $rcf->set('group.id', $this->getConfig()->gropuId);
+            $cf = new \RdKafka\TopicConf();
+            $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
+            $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+            $cf->set('request.required.acks', $this->getConfig()->requiredAck);
+            $cf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
+            $this->topicConf = $cf;
+            $rk = new \RdKafka\Producer($rcf);
+            if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
+                $rk->setLogLevel($this->getConfig()->debugLogLevel);
             }
-            return $this->producer;
-        } catch (\Throwable $e) {
-            echo "======producer======".PHP_EOL;
-            print_r($e->__toString());
+            $rk->addBrokers($this->getConfig()->metadataBrokerList);
+            $this->producer = $rk;
         }
+        return $this->producer;
     }
 
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config

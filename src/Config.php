@@ -7,7 +7,7 @@ class Config
     public $metadataRefreshIntervalMs = 10000;
     public $metadataBrokerList = "127.0.0.1:9092";
     public $brokerVersion = "1.0.0";
-    public $requiredAck = "1";
+    public $requiredAck = "0";
     public $isAsyn = false;
     public $produceInterval = 50;
     public $toppic = "";
