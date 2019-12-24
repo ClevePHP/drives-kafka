@@ -7,7 +7,7 @@ class Config
     public $metadataRefreshIntervalMs = 10000;
     public $metadataBrokerList = "127.0.0.1:9092";
     public $brokerVersion = "1.0.0";
-    public $requiredAck = "0";
+    public $requiredAck = "1";
     public $isAsyn = false;
     public $produceInterval = 50;
     public $toppic = "";
@@ -45,7 +45,7 @@ class Config
                 $this->metadataBrokerList = $config['broker_list'];
             }
             if (isset($config["broker_version"])) {
-                $this->requiredAck = $config['broker_version'];
+                $this->brokerVersion = $config['broker_version'];
             }
             if (isset($config["required_ack"])) {
                 $this->requiredAck = $config['required_ack'];
