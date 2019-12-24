@@ -45,10 +45,7 @@ class Producers
             $len = $this->producer->getOutQLen();
             while ($len > 0) {
                 $len = $this->producer->getOutQLen();
-                $result = $this->producer->poll(50);
-                if (! $result) {
-                    throw new \Exception("kafka connection error");
-                }
+                $this->producer->poll(50);
             }
         } else {
             throw new \Exception("toppic is null");
