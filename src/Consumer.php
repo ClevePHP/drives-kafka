@@ -65,7 +65,7 @@ class Consumer
         $topicConf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
         $topic = $rk->newTopic($this->getConfig()->toppic, $topicConf);
         // Start consuming partition 0
-        $topic->consumeStart(0, RD_KAFKA_OFFSET_END);
+        $topic->consumeStart(0, RD_KAFKA_OFFSET_STORED);
         $message = $topic->consume($partionId, 120 * 10000);
         if ($message) {
             switch ($message->err) {
@@ -105,10 +105,11 @@ class Consumer
         });
         $conf->set('group.id', $this->getConfig()->gropuId);
         $conf->set('metadata.broker.list', $this->getConfig()->metadataBrokerList);
-        $topicConf = new \RdKafka\TopicConf();
-        $topicConf->set('request.required.acks', $this->getConfig()->requiredAck);
-        $topicConf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
-        $conf->setDefaultTopicConf($topicConf);
+
+        // $conf = new \RdKafka\TopicConf();
+        $conf->set('request.required.acks', $this->getConfig()->requiredAck);
+        $conf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
+        // $conf->setDefaultTopicConf($topicConf);
         $consumer = new \RdKafka\KafkaConsumer($conf);
         $consumer->subscribe([
             $this->getConfig()->toppic
