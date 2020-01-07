@@ -10,6 +10,8 @@ class Kafkaqueues
 
     static $config = [];
 
+    static $offsets = [];
+
     public static function driveObject($configs)
     {
         self::$config = $configs;
@@ -45,10 +47,23 @@ class Kafkaqueues
 
         // consumerLow
         if ($config->consumerModel == 0) {
-            (\ClevePHP\Drives\Queues\kafka\Consumer::getInstance())->config($config)->consumer(function ($message) use ($callback) {
+            (\ClevePHP\Drives\Queues\kafka\Consumer::getInstance())->config($config)->consumer(function ($message) use ($callback,$config) {
+                $offsetDatas=self::$offsets[$config->toppic]??[];
+                if ($offsetDatas) {
+                    if (in_array($message->offset, $offsetDatas) || isset($offsetDatas[$message->offset])) {
+                        echo PHP_EOL."repeat--data----".PHP_EOL;
+                        return;
+                    }
+                    if(count($offsetDatas)>1000){
+                        array_pop($offsetDatas);
+                    }
+                }
+                $offsetDatas[$message->offset]=$message->offset;
+                self::$offsets[$config->toppic] = $offsetDatas;
                 if ($message && property_exists($message, "payload")) {
-                    if ($message->payload && json_decode($message->payload)) {
-                        $message->payload = json_decode($message->payload, TRUE);
+                    $jsonData = @json_decode($message->payload, TRUE);
+                    if ($message->payload && $jsonData) {
+                        $message->payload = $jsonData;
                     }
                 }
                 ($callback instanceof \Closure) && call_user_func($callback, $message);
@@ -56,8 +71,9 @@ class Kafkaqueues
         } elseif ($config->consumerModel == 1) {
             (\ClevePHP\Drives\Queues\kafka\Consumer::getInstance())->config($config)->consumerLow(function ($message) use ($callback) {
                 if ($message && property_exists($message, "payload")) {
-                    if ($message->payload && json_decode($message->payload)) {
-                        $message->payload = json_decode($message->payload, TRUE);
+                    $jsonData = @json_decode($message->payload, TRUE);
+                    if ($message->payload && $jsonData) {
+                        $message->payload = $jsonData;
                     }
                 }
                 ($callback instanceof \Closure) && call_user_func($callback, $message);
@@ -66,8 +82,9 @@ class Kafkaqueues
             Logger::echo("consumerModel=2..........");
             (\ClevePHP\Drives\Queues\kafka\Consumer::getInstance())->config($config)->consumerPop(function ($message) use ($callback) {
                 if ($message && property_exists($message, "payload")) {
-                    if ($message->payload && json_decode($message->payload)) {
-                        $message->payload = json_decode($message->payload, TRUE);
+                    $jsonData = @json_decode($message->payload, TRUE);
+                    if ($message->payload && $jsonData) {
+                        $message->payload = $jsonData;
                     }
                 }
                 ($callback instanceof \Closure) && call_user_func($callback, $message);

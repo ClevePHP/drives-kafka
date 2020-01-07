@@ -121,10 +121,10 @@ class Consumer
                     ($callback instanceof \Closure) && call_user_func($callback, $message);
                     break;
                 case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                    echo "No more messages; will wait for more\n";
+                    sleep(2);
                     break;
                 case RD_KAFKA_RESP_ERR__TIMED_OUT:
-                    echo "Timed out\n";
+                    echo "time-out:". $message->errstr() . PHP_EOL;
                     break;
                 default:
                     throw new \Exception($message->errstr(), $message->err);
