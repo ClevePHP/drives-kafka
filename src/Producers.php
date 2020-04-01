@@ -62,6 +62,15 @@ class Producers
         if (! $this->producer) {
             $rcf = new \RdKafka\Conf();
             $rcf->set('group.id', $this->getConfig()->gropuId);
+            if ($this->config->certification){
+                $certification=$this->config->certification;
+                $rcf->set('sasl.mechanisms', $certification["mechanisms"]??'PLAIN');
+                $rcf->set('api.version.request',$certification["version_request"] ?? 'true');
+                $rcf->set("sasl.username",$certification["username"]??"");
+                $rcf->set("sasl.password",$certification["password"]??"");
+                $rcf->set("security.protocol",$certification["protocol"]??"SASL_SSL");
+                $rcf->set("ssl.ca.location",$certification["ca_location"]??"");
+            }
             if ($this->getConfig()->errorSavePath) {
                 $rcf->setErrorCb(function ($kafka, $err, $reason) use ($cf) {
                     file_put_contents($this->getConfig()->errorSavePath, sprintf("Kafka error: %s (reason: %s)", rd_kafka_err2str($err), $reason) . PHP_EOL, FILE_APPEND);
@@ -75,6 +84,12 @@ class Producers
                 });
             }
             
+            if ($this->getConfig()->debugLogLevel) {
+                $rcf->setLogCb(function ($kafka, $level, $facility, $message) {
+                    printf("Kafka %s: %s (level: %d)\n", $facility, $message, $level);
+                });
+            }
+            
             $cf = new \RdKafka\TopicConf();
             $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
             $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
@@ -83,9 +98,7 @@ class Producers
             
             $this->topicConf = $cf;
             $rk = new \RdKafka\Producer($rcf);
-            if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
-                $rk->setLogLevel($this->getConfig()->debugLogLevel);
-            }
+            
             
             
             $rk->addBrokers($this->getConfig()->metadataBrokerList);

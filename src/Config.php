@@ -30,7 +30,7 @@ class Config
 
     public $messageTimeoutMs = 3000;
 
-    public $debugLogLevel = 0;
+    public $debugLogLevel = 1;
 
     public $consumerModel = 0;
 
@@ -39,7 +39,11 @@ class Config
     public $errorSavePath = null;
 
     public $isInfoError = true;
+    
+    public $certification=[];
 
+    private $extConfig=[];
+    
     private static $instance;
 
     private function __construct()
@@ -113,7 +117,20 @@ class Config
             if (isset($config['is_info_error'])) {
                 $this->isInfoError = $config["is_info_error"];
             }
+            if (isset($config["username"]) && isset($config["password"])){
+                $this->certification=[
+                    "username"=>$config['username'],
+                    "password"=>$config['password'],
+                    "protocol"=>$config['protocol']??"",
+                    "ca_location"=>$config["ca_location"]??""
+                ];
+            }
+            
+            $this->extConfig=$config;
         }
         return $this;
+    }
+    public function getExtConfig(){
+        return $this->extConfig;
     }
 }

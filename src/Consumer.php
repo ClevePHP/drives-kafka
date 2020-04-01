@@ -54,6 +54,16 @@ class Consumer
     {
         $conf = new \RdKafka\Conf();
         $conf->set('group.id', $this->getConfig()->gropuId);
+        if ($this->config->certification){
+            //认证相关
+            $certification=$this->config->certification;
+            $conf->set('sasl.mechanisms', $certification["mechanisms"]??'PLAIN');
+            $conf->set('api.version.request',$certification["version_request"] ?? 'true');
+            $conf->set("sasl.username",$certification["username"]??"");
+            $conf->set("sasl.password",$certification["password"]??"");
+            $conf->set("security.protocol",$certification["protocol"]??"SASL_SSL");
+            $conf->set("ssl.ca.location",$certification["ca_location"]??"");
+        }
         $rk = new \RdKafka\Consumer($conf);
         $topicConf = new \RdKafka\TopicConf();
         $rk->addBrokers($this->getConfig()->metadataBrokerList);
