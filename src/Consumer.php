@@ -1,4 +1,5 @@
 <?php
+
 namespace ClevePHP\Drives\Queues\kafka;
 
 class Consumer
@@ -172,8 +173,9 @@ class Consumer
     }
 
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config
-    {
-        return $this->config;
-    }
+    
+{
+	return $this->config;
+}
 }
 

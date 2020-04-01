@@ -34,6 +34,12 @@ class Config
 
     public $consumerModel = 0;
 
+    public $isStrong = true;
+
+    public $errorSavePath = null;
+
+    public $isInfoError = true;
+
     private static $instance;
 
     private function __construct()
@@ -97,6 +103,15 @@ class Config
             }
             if (isset($config["consumer_model"])) {
                 $this->consumerModel = $config["consumer_model"];
+            }
+            if (isset($config['is_strong'])) {
+                $this->isStrong = $config["is_strong"];
+            }
+            if (isset($config['error_save_path'])) {
+                $this->errorSavePath = $config["error_save_path"];
+            }
+            if (isset($config['is_info_error'])) {
+                $this->isInfoError = $config["is_info_error"];
             }
         }
         return $this;

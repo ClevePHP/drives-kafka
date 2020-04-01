@@ -1,4 +1,5 @@
 <?php
+
 namespace ClevePHP\Drives\Queues\kafka;
 
 class Kafkaconnectionpool
@@ -92,16 +93,17 @@ class Kafkaconnectionpool
             print_r($e->__toString());
         }
     }
-    public function getProducers($config):?\ClevePHP\Drives\Queues\kafka\Producers {
-        if ($config) {
-            $result=$this->connect($config)->producers()->getConnect();
-            if(!$result){
-                $this->connect($config)->producers()->connect($config);
-            }
-            return $this->connect($config)->producers()->getConnect();
-        }
-        return false;
-    }
+    public function getProducers($config):?\ClevePHP\Drives\Queues\kafka\Producers 
+{
+	if ($config) {
+		$result = $this->connect ( $config )->producers ()->getConnect ();
+		if (! $result) {
+			$this->connect ( $config )->producers ()->connect ( $config );
+		}
+		return $this->connect ( $config )->producers ()->getConnect ();
+	}
+	return false;
+}
     public function getConsumer($config):?\ClevePHP\Drives\Queues\kafka\Consumer  {
         if ($config) {
             $result=$this->connect($config)->consumer()->getConnect();

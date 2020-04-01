@@ -35,18 +35,22 @@ class Producers
         unset($config);
         return $this;
     }
-
     public function produce($message)
     {
         $this->producer();
         if ($this->producer && $this->topic && $message) {
             $topic = $this->producer->newTopic($this->getConfig()->toppic, $this->topicConf);
-            $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message);
-            $len = $this->producer->getOutQLen();
-            while ($len > 0) {
+            $result = $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message);
+            if ($this->getConfig()->isStrong) {
+                // 如果超时，是否重新选举
                 $len = $this->producer->getOutQLen();
-                $this->producer->poll(50);
+                while ($len > 0) {
+                    $len = $this->producer->getOutQLen();
+                    $this->producer->poll(50);
+                }
             }
+            return $result;
+            //
         } else {
             throw new \Exception("toppic is null");
         }
@@ -54,26 +58,43 @@ class Producers
 
     protected function producer()
     {
+        
         if (! $this->producer) {
             $rcf = new \RdKafka\Conf();
             $rcf->set('group.id', $this->getConfig()->gropuId);
+            if ($this->getConfig()->errorSavePath) {
+                $rcf->setErrorCb(function ($kafka, $err, $reason) use ($cf) {
+                    file_put_contents($this->getConfig()->errorSavePath, sprintf("Kafka error: %s (reason: %s)", rd_kafka_err2str($err), $reason) . PHP_EOL, FILE_APPEND);
+                });
+            }
+            if ($this->getConfig()->isInfoError) {
+                $rcf->setErrorCb(function ($kafka, $err, $reason){
+                    if ($err){
+                        throw new \Exception($err);
+                    }
+                });
+            }
+            
             $cf = new \RdKafka\TopicConf();
             $cf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
             $cf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
             $cf->set('request.required.acks', $this->getConfig()->requiredAck);
             $cf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
+            
             $this->topicConf = $cf;
             $rk = new \RdKafka\Producer($rcf);
             if ($this->getConfig()->debugLogLevel && method_exists($rk, "setLogLevel")) {
                 $rk->setLogLevel($this->getConfig()->debugLogLevel);
             }
+            
+            
             $rk->addBrokers($this->getConfig()->metadataBrokerList);
             $this->producer = $rk;
         }
         return $this->producer;
     }
-
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config
+    
     {
         return $this->config;
     }
