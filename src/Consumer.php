@@ -1,5 +1,4 @@
 <?php
-
 namespace ClevePHP\Drives\Queues\kafka;
 
 class Consumer
@@ -42,7 +41,7 @@ class Consumer
         $topic = $consumer->newTopic($this->topic);
         $allInfo = $consumer->getMetadata(false, $topic, 60e3);
         $topics = $allInfo->getTopics();
-
+        
         foreach ($topics as $tp) {
             $partitions = $tp->getPartitions();
             break;
@@ -54,15 +53,20 @@ class Consumer
     {
         $conf = new \RdKafka\Conf();
         $conf->set('group.id', $this->getConfig()->gropuId);
-        if ($this->config->certification){
-            //认证相关
-            $certification=$this->config->certification;
-            $conf->set('sasl.mechanisms', $certification["mechanisms"]??'PLAIN');
-            $conf->set('api.version.request',$certification["version_request"] ?? 'true');
-            $conf->set("sasl.username",$certification["username"]??"");
-            $conf->set("sasl.password",$certification["password"]??"");
-            $conf->set("security.protocol",$certification["protocol"]??"SASL_SSL");
-            $conf->set("ssl.ca.location",$certification["ca_location"]??"");
+        if ($this->config->certification) {
+            // 认证相关
+            $certification = $this->config->certification;
+            $conf->set('sasl.mechanisms', $certification["mechanisms"] ?? 'PLAIN');
+            $conf->set('api.version.request', $certification["version_request"] ?? 'true');
+            $conf->set("sasl.username", $certification["username"] ?? "");
+            $conf->set("sasl.password", $certification["password"] ?? "");
+            $conf->set("security.protocol", $certification["protocol"] ?? "SASL_SSL");
+            $conf->set("ssl.ca.location", $certification["ca_location"] ?? "");
+        }
+        if ($this->config->getExtConfig("consumer")) {
+            foreach ($this->config->getExtConfig("consumer") as $k => $v) {
+                $conf->set($k, $v);
+            }
         }
         $rk = new \RdKafka\Consumer($conf);
         $topicConf = new \RdKafka\TopicConf();
@@ -74,6 +78,14 @@ class Consumer
         $topicConf->set('offset.store.method', $this->getConfig()->offsetStoreMethod);
         $topicConf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
         $topicConf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
+        
+        if ($this->config->getExtConfig("consumer_topic")) {
+            foreach ($this->config->getExtConfig("consumer_topic") as $k => $v) {
+                $topicConf->set($k, $v);
+            }
+        }
+        
+        
         $topic = $rk->newTopic($this->getConfig()->toppic, $topicConf);
         // Start consuming partition 0
         $topic->consumeStart(0, RD_KAFKA_OFFSET_STORED);
@@ -116,7 +128,7 @@ class Consumer
         });
         $conf->set('group.id', $this->getConfig()->gropuId);
         $conf->set('metadata.broker.list', $this->getConfig()->metadataBrokerList);
-
+        
         // $conf = new \RdKafka\TopicConf();
         $conf->set('request.required.acks', $this->getConfig()->requiredAck);
         $conf->set('auto.offset.reset', $this->getConfig()->autoOffsetReset);
@@ -135,7 +147,7 @@ class Consumer
                     sleep(2);
                     break;
                 case RD_KAFKA_RESP_ERR__TIMED_OUT:
-                    echo "time-out:". $message->errstr() . PHP_EOL;
+                    echo "time-out:" . $message->errstr() . PHP_EOL;
                     break;
                 default:
                     throw new \Exception($message->errstr(), $message->err);
@@ -184,8 +196,8 @@ class Consumer
 
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config
     
-{
-	return $this->config;
-}
+    {
+        return $this->config;
+    }
 }
 

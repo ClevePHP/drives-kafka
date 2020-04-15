@@ -35,6 +35,7 @@ class Producers
         unset($config);
         return $this;
     }
+
     public function produce($message)
     {
         $this->producer();
@@ -58,18 +59,22 @@ class Producers
 
     protected function producer()
     {
-        
         if (! $this->producer) {
             $rcf = new \RdKafka\Conf();
             $rcf->set('group.id', $this->getConfig()->gropuId);
-            if ($this->config->certification){
-                $certification=$this->config->certification;
-                $rcf->set('sasl.mechanisms', $certification["mechanisms"]??'PLAIN');
-                $rcf->set('api.version.request',$certification["version_request"] ?? 'true');
-                $rcf->set("sasl.username",$certification["username"]??"");
-                $rcf->set("sasl.password",$certification["password"]??"");
-                $rcf->set("security.protocol",$certification["protocol"]??"SASL_SSL");
-                $rcf->set("ssl.ca.location",$certification["ca_location"]??"");
+            if ($this->config->certification) {
+                $certification = $this->config->certification;
+                $rcf->set('sasl.mechanisms', $certification["mechanisms"] ?? 'PLAIN');
+                $rcf->set('api.version.request', $certification["version_request"] ?? 'true');
+                $rcf->set("sasl.username", $certification["username"] ?? "");
+                $rcf->set("sasl.password", $certification["password"] ?? "");
+                $rcf->set("security.protocol", $certification["protocol"] ?? "SASL_SSL");
+                $rcf->set("ssl.ca.location", $certification["ca_location"] ?? "");
+            }
+            if ($this->config->getExtConfig("producer")) {
+                foreach ($this->config->getExtConfig("producer") as $k => $v) {
+                    $rcf->set($k, $v);
+                }
             }
             if ($this->getConfig()->errorSavePath) {
                 $rcf->setErrorCb(function ($kafka, $err, $reason) use ($cf) {
@@ -77,9 +82,9 @@ class Producers
                 });
             }
             if ($this->getConfig()->isInfoError) {
-                $rcf->setErrorCb(function ($kafka, $err, $reason){
-                    if ($err){
-                        throw new \Exception($err);
+                $rcf->setErrorCb(function ($kafka, $err, $reason) {
+                    if ($err) {
+                        throw new \Exception($reason, $err);
                     }
                 });
             }
@@ -96,16 +101,21 @@ class Producers
             $cf->set('request.required.acks', $this->getConfig()->requiredAck);
             $cf->set("message.timeout.ms", $this->getConfig()->messageTimeoutMs);
             
+            if ($this->config->getExtConfig("producer_topic")) {
+                foreach ($this->config->getExtConfig("producer_topic") as $k => $v) {
+                    $cf->set($k, $v);
+                }
+            }
+            
             $this->topicConf = $cf;
             $rk = new \RdKafka\Producer($rcf);
-            
-            
             
             $rk->addBrokers($this->getConfig()->metadataBrokerList);
             $this->producer = $rk;
         }
         return $this->producer;
     }
+
     protected function getConfig(): ?\ClevePHP\Drives\Queues\kafka\Config
     
     {
